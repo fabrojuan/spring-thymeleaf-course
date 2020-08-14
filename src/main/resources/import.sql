@@ -1,0 +1,3 @@
+insert into clientes(id, apellido, nombre, email, fecha_alta, foto) values(1, 'Perez', 'Raul', 'rperez@gmail.com', '2019-07-15', '');
+insert into clientes(id, apellido, nombre, email, fecha_alta, foto) values(2, 'Aguero', 'Samanta', 'saguero@gmail.com', '2019-07-19', '');
+insert into clientes(id, apellido, nombre, email, fecha_alta, foto) values(3, 'Ledesma', 'Daniel', 'dledesma@gmail.com', '2019-07-23', '');

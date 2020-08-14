@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="layout/layout :: head">
+</head>
+
+<body>
+	<header th:replace="layout/layout :: header">
+	</header>
+
+	<div class="container py-4">
+		<div class="card bg-light">
+			<div class="card-header" th:text="${titulo}"></div>
+			<div class="card-body">
+				<h4 class="card-title">
+					<a th:href="@{/form}" class="btn btn-primary">Crear Cliente </a>
+				</h4>
+				<table class="table table-striped">
+					<thead class="thead-inverse">
+						<tr>
+							<th>id</th>
+							<th>apellido</th>
+							<th>nombre</th>
+							<th>email</th>
+							<th>fecha alta</th>
+							<th></th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:each="cliente: ${clientes}">
+							<td><a class="btn btn-primary btn-xs" th:text="${cliente.id}" th:href="@{'/ver/' + ${cliente.id}}"></a></td>
+							<td th:text="${cliente.apellido}"></td>
+							<td th:text="${cliente.nombre}"></td>
+							<td th:text="${cliente.email}"></td>
+							<td th:text="${cliente.fechaAlta}"></td>
+							<td><a th:href="@{/form/} + ${cliente.id}" th:text="'Editar'" class="btn btn-primary btn-xs"></a></td>
+							<td><a th:href="@{/eliminar/} + ${cliente.id}" th:text="'Eliminar'" class="btn btn-danger btn-xs"></a></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	
+		
+	</div>
+	
+	<footer th:replace="layout/layout :: footer">
+	</footer>
+
+</body>
+</html>
