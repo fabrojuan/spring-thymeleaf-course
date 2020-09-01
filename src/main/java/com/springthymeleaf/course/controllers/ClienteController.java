@@ -1,11 +1,19 @@
 package com.springthymeleaf.course.controllers;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -22,11 +30,31 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.springthymeleaf.course.models.entity.Cliente;
 import com.springthymeleaf.course.models.service.IClienteService;
 
+
 @Controller
 public class ClienteController {
 
 	@Autowired
 	private IClienteService clienteService;
+	private final Logger log = LoggerFactory.getLogger(getClass());
+	
+	@GetMapping(value = "/uploads/{filename:.+}")
+	public ResponseEntity<Resource> getFoto(@PathVariable String filename) {
+		Path pathFoto = Paths.get("uploads").resolve(filename).toAbsolutePath();
+		log.info("pathFoto", pathFoto);
+		Resource recurso = null;
+		try {  
+			recurso = new UrlResource(pathFoto.toUri());
+			if(!recurso.exists() || !recurso.isReadable()) {
+				throw new RuntimeException("Error al cargar imagen: " + pathFoto);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok()
+				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + recurso.getFilename() + "\"")
+				.body(recurso);
+	}
 	
 	@GetMapping(value="/ver/{id}")
 	public String ver(@PathVariable(value="id") Long id, Model model, RedirectAttributes flash) {
@@ -64,15 +92,16 @@ public class ClienteController {
 		}
 		
 		if(!foto.isEmpty()) {
-			//Path directorioRecursos = Paths.get("src//main//resources//static//uploads");
-			//String rootPath =  directorioRecursos.toFile().getAbsolutePath();
-			String rootPath = "/home/juan/Documentos/Temp/uploads";
+			String uniqueFilename = UUID.randomUUID().toString() + "_" + foto.getOriginalFilename();
+			Path rootPath = Paths.get("uploads").resolve(uniqueFilename);
+			Path rootAbsolutePath = rootPath.toAbsolutePath();
+			//
+			log.info("rootPath: " + rootPath);
+			log.info("rootAbsolutePath: " + rootAbsolutePath);
 			try {
-				byte[] bytes = foto.getBytes();
-				Path rutaCompleta = Paths.get(rootPath + "//" + foto.getOriginalFilename());
-				Files.write(rutaCompleta, bytes);
-				flash.addFlashAttribute("info", "Has subido correctamente el archivo '" + foto.getOriginalFilename() + "'");
-				cliente.setFoto(foto.getOriginalFilename());
+				Files.copy(foto.getInputStream(), rootAbsolutePath);
+				flash.addFlashAttribute("info", "Has subido correctamente el archivo '" + rootPath + "'");
+				cliente.setFoto(uniqueFilename);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -100,9 +129,22 @@ public class ClienteController {
 	}
 	
 	@RequestMapping(value = "/eliminar/{id}")
-	public String eliminar(@PathVariable(value = "id") Long id) {
+	public String eliminar(@PathVariable(value = "id") Long id, RedirectAttributes flash) {
 		if(id > 0) {
+			Cliente cliente = clienteService.findOne(id);
+			//
 			clienteService.delete(id);
+			flash.addFlashAttribute("success", "Cliente eliminado");
+			//
+			Path rootPath = Paths.get("uploads").resolve(cliente.getFoto()).toAbsolutePath();
+			File archivo = rootPath.toFile();
+			
+			if(archivo.exists() && archivo.canRead()) {
+				if(archivo.delete()) {
+					flash.addFlashAttribute("info", "Se borro la foto");
+				}
+			}
+			
 		}
 		return "redirect:/listar";
 	}
